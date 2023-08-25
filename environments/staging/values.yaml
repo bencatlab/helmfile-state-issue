@@ -1,0 +1,21 @@
+# Staging Values
+
+global:
+  commonLabels:
+    env: staging
+
+poc-service-01:
+  env:
+    ENV: staging
+    POC: from-env-values
+  image:
+    tag: 1.1.0
+  replicaCount: 2
+
+poc-service-02:
+  env:
+    ENV: staging
+    POC: from-env-values
+  image:
+    tag: 1.2.0
+  replicaCount: 1

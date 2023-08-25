@@ -1,0 +1,18 @@
+bases:
+  - ../../common/environments.yaml
+
+templates:
+  defaultRelease:
+    chart: ../../charts/{{`{{ .Release.Name }}`}}
+    namespace: '{{`{{ .Environment.Name }}`}}'
+    values:
+      - ../../charts/{{`{{ .Release.Name }}`}}/values.yaml
+      - ../../common/environment-values.gotmpl
+
+releases:
+  - name: poc-service-01
+    inherit:
+      - template: defaultRelease
+  - name: poc-service-02
+    inherit:
+      - template: defaultRelease

@@ -1,0 +1,12 @@
+templates:
+  defaultEnvironment: &defaultEnvironment
+    values:
+      - ../../environments/{{ .Environment.Name }}/values.yaml
+    # secrets:
+    #   - environments/{{ .Environment.Name }}/secrets.yaml
+
+environments:
+  staging:
+    <<: *defaultEnvironment
+  production:
+    <<: *defaultEnvironment

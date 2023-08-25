@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "poc-service-02.fullname" . }}
+  labels:
+    {{- include "poc-service-02.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "poc-service-02.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- tpl (toYaml .) $ | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "poc-service-02.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "poc-service-02.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          {{- if .Values.env }}
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          {{- if or .Values.configMapRef .Values.secretRef }}
+          envFrom:
+          {{- with .Values.configMapRef }}
+            {{- range $.Values.configMapRef }}
+            - configMapRef:
+                name: {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.secretRef }}
+            {{- range $.Values.secretRef }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- if and .Values.resources (not (empty .Values.resources)) }}
+          resources:
+            {{- .Values.resources | toYaml | nindent 12 }}
+          {{- else }}
+            {{- fail "ERROR: 'Values.resources' must be defined and should be a non-empty dictionary." }}
+          {{- end }}
+          {{- if .Values.persistence.enabled }}
+          {{- with .Values.persistence.volumes }}
+          volumeMounts:
+            {{- range $.Values.persistence.volumes }}
+            - name: {{ .name | quote }}
+              mountPath: {{ .mountPath | quote }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+      {{- with .Values.persistence.volumes }}
+      volumes:
+        {{- range $.Values.persistence.volumes }}
+        - name: {{ .name | quote }}
+          persistentVolumeClaim:
+            claimName: {{ .name | quote }}
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
